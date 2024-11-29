@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "rootDir": "./src",
+    "moduleResolution": "node",
+    "typeRoots": ["node_modules/@types", "src/types"],
+    "outDir": "./dist",
+    "target": "ES2016",
+    "removeComments": true,
+    "esModuleInterop": true,
+    "strict": true,
+    "noImplicitAny": true,
+    "baseUrl": "./",
+   "paths": {
+      "@/*":["src/*"]
+    },
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules"],
+}
