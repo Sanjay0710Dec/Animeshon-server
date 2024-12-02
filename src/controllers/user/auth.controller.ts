@@ -9,7 +9,6 @@ import { ErrorCodes } from "@/config/error.config";
 import { HASH_SALT_ROUNDS } from "@/config/auth.config";
 import { v4 as uuid } from "uuid";
 import { sendEmail } from "@/lib/sendVerificationEmail";
-import primsa from "@/utils/prisma.index";
 import { createVerificationLink } from "@/utils/utils.index";
 
 export async function registerUser(
@@ -67,7 +66,7 @@ export async function resendVerificationLink(
       .VERIFICATION_PENDING_USER || "";
 
   try {
-    const user = await primsa.user.findUnique({
+    const user = await prisma.user.findUnique({
       where: {
         id: pending_user_id,
       },
@@ -114,8 +113,9 @@ export async function sendResetPasswordVerificationLink(
 ) {
   const email = (req.body as { email: string }).email;
   const userId = req.user_id;
+  const isVerified = req.isVerified;
   try {
-    const resetPasswordVerificationEntry = await primsa.userVerification.create(
+    const resetPasswordVerificationEntry = await prisma.userVerification.create(
       {
         data: {
           token: uuid(),
@@ -125,7 +125,7 @@ export async function sendResetPasswordVerificationLink(
       },
     );
     const verificationLink = createVerificationLink(
-      true,
+      isVerified,
       resetPasswordVerificationEntry.token,
     );
     await sendEmail(
@@ -154,9 +154,9 @@ export async function sendVerificationLinkForResourceNotFound(
 ) {
   const email = (req.body as { email: string }).email;
   const userId = req.user_id;
-  const isVerified = req.isVerfied;
+  const isVerified = req.isVerified;
   try {
-    const verificationEntry = await primsa.userVerification.update({
+    const verificationEntry = await prisma.userVerification.update({
       where: {
         identifier: userId,
       },
@@ -184,4 +184,3 @@ export async function sendVerificationLinkForResourceNotFound(
     );
   }
 }
-

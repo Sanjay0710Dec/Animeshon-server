@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import { CustomJwtBody, SigninBody, SignupBody } from "../types/user";
-import primsa from "@/utils/prisma.index";
+import prisma from "@/utils/prisma.index";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import ErrorResponse from "@/lib/responses/ErrorResponse";
@@ -16,7 +16,7 @@ export async function checkIfUserExist(
   const { username, email } = req.body as SignupBody;
 
   try {
-    const response = await primsa.user.findFirst({
+    const response = await prisma.user.findFirst({
       where: {
         OR: [{ username: username, email: email }],
       },
@@ -50,7 +50,7 @@ export async function verifyEmailForRegistrationAndPasswordReset(
   const verificationId = (req.params as { verificationId: string })
     .verificationId;
   try {
-    const notVerifiedUser = await primsa.userVerification.findFirst({
+    const notVerifiedUser = await prisma.userVerification.findFirst({
       where: {
         token: verificationId,
       },
@@ -73,14 +73,14 @@ export async function verifyEmailForRegistrationAndPasswordReset(
       );
     }
 
-    await primsa.userVerification.delete({
+    await prisma.userVerification.delete({
       where: {
         token: verificationId,
       },
     });
 
     if (notVerifiedUser.type === "EMAIL_VERIFICATION") {
-      await primsa.user.update({
+      await prisma.user.update({
         where: {
           id: notVerifiedUser.identifier,
         },
@@ -88,7 +88,7 @@ export async function verifyEmailForRegistrationAndPasswordReset(
           isVerified: true,
         },
       });
-      
+
       res.clearCookie("VERIFICATION_PENDING_USER");
       return sendSuccessResponse(res, "account created", null, 201);
     }
@@ -115,7 +115,7 @@ export async function checkIfUserRegistered(
   const { email, password } = req.body as SigninBody;
 
   try {
-    const user = await primsa.user.findFirst({
+    const user = await prisma.user.findFirst({
       where: {
         email,
       },
@@ -181,7 +181,7 @@ export async function checkIfUserRegisteredToResetPassword(
   const email = (req.body as { email: string }).email;
 
   try {
-    const user = await primsa.user.findUnique({
+    const user = await prisma.user.findUnique({
       where: {
         email,
       },
@@ -194,8 +194,8 @@ export async function checkIfUserRegisteredToResetPassword(
     }
 
     req.user_id = user.id;
-    req.isVerfied = user.isVerified;
-   
+    req.isVerified = user.isVerified;
+
     next();
   } catch (error: any) {
     console.log(error.message);
@@ -203,6 +203,42 @@ export async function checkIfUserRegisteredToResetPassword(
     next(
       new ErrorResponse(
         "Internal server error",
+        ErrorCodes.INTERNAL_SERVER_ERROR,
+      ),
+    );
+  }
+}
+
+export async function checkIfUserTryingToReRegister(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) {
+  const email = (req.body as { email: string }).email || "";
+  try {
+    const user = await prisma.user.findUnique({
+      where: {
+        email,
+      },
+    });
+    if (!user) {
+      return next(
+        new ErrorResponse("user with email do not exist", ErrorCodes.NOT_FOUND),
+      );
+    }
+
+    if (user.isVerified) {
+      return next(
+        new ErrorResponse("you are already verified", ErrorCodes.BAD_REQUEST),
+      );
+    }
+    req.user_id = user.id;
+    req.isVerified = user.isVerified;
+    next();
+  } catch (error) {
+    next(
+      new ErrorResponse(
+        "verification failed,please try after sometime",
         ErrorCodes.INTERNAL_SERVER_ERROR,
       ),
     );
