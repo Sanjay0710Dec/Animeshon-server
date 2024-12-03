@@ -10,6 +10,7 @@ import {
   updateUserProfile,
 } from "@/controllers/user/profile.controller";
 import { registerUser } from "@/controllers/user/auth.controller";
+import userFeedBackAndSuggestion from "@/controllers/user/feedback.controller";
 
 const userRouter = Router();
 userRouter.route("/signup").post(checkIfUserExist, registerUser);
@@ -20,4 +21,5 @@ userRouter.route("/S3signedUrl").get(AuthenitcateUser, giveSignedUrlToUpload);
 userRouter.route("/update-profile").patch(AuthenitcateUser, updateUserProfile);
 userRouter.route("/update-banner").patch(AuthenitcateUser, updateUserBanner);
 
+userRouter.route("/feedback-suggestion").post(userFeedBackAndSuggestion);
 export default userRouter;
