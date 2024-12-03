@@ -68,3 +68,9 @@ model WatchHistory {
   animeEpisodeId String
   createdAt      DateTime @default(now())
 }
+
+model UserFeedBack{
+ id String @id @default(cuid())
+ feedback String
+ suggestion String?
+}
